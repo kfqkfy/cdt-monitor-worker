@@ -29,32 +29,26 @@
 
 ## 部署
 
-### 🚀 方式一：Workers Builds（Git 集成，push 即自动部署）
+### 🚀 方式一：Workers Builds（Git 集成，push 即自动部署，全自动）
 
-连接你**已有的** GitHub 仓库，代码 push 后 Cloudflare 自动重新部署。
+连接你**已有的** GitHub 仓库，代码 push 后 Cloudflare 自动重新部署，**无需手动创建/绑定任何资源**（D1 数据库由 wrangler auto-provision 自动创建并绑定）。
 
-1. **创建 D1 数据库**（一次）
-   - Dashboard → Workers & Pages → **D1** → **Create database** → 名字 `cdt_monitor`
-2. **连接仓库**
-   - Workers & Pages → **Create** → **Workers** → **Deploy with Git**
+1. **连接仓库**
+   - Dashboard → Workers & Pages → **Create** → **Workers** → **Deploy with Git**
    - 授权 GitHub → 选择 `kfqkfy/cdt-monitor-worker` → 分支 `main`
-   - 构建/部署命令保持默认（`npm run deploy` 与 `npx wrangler deploy` 等价）
-3. **⚠️ 关键：绑定 D1（必须做，否则部署报 10021）**
-   - 项目 → **Settings** → **Bindings** → **Add binding**
-   - Type: `D1 database`，Variable name: **`DB`**（必须精确），Database: `cdt_monitor`
-4. **添加 Cron 触发器**
+   - 构建/部署命令保持默认（`npm run deploy`）
+2. **添加 Cron 触发器**（监控需要，可选但建议）
    - **Settings** → **Triggers** → **Cron Triggers** → `* * * * *`
-5. **初始化表结构**
+3. **初始化表结构**（首次部署后执行一次）
    - 项目 → **Console** 运行（或本地执行）：
    ```bash
    npx wrangler d1 execute cdt_monitor --remote --file=./schema.sql
    ```
-6. **完成** — 以后每次 `git push` 到 main 自动重新部署
+4. **完成** — 以后每次 `git push` 到 main 自动重新部署
 
-> ⚠️ 常见错误 `binding DB of type d1 must have a valid database_id [code: 10021]`：
-> 仓库 `wrangler.toml` 中的 `database_id` 是占位符，必须按第 3 步在 Dashboard 添加 D1 Binding 覆盖它，然后 Retry deployment。
+> 💡 `wrangler.toml` 中 D1 绑定只声明 `database_name` 不写 `database_id`，wrangler 部署时会自动创建同名数据库（若不存在）或复用（若已存在），无需手动绑定。
 
-### 🚀 方式二：一键脚本（自动创建 D1 + 建表 + 部署）
+### 🚀 方式二：一键脚本（全自动）
 
 只需 Node.js 18+，一条命令：
 
@@ -64,7 +58,7 @@ cd cdt-monitor-worker
 ./deploy.sh
 ```
 
-脚本自动完成：登录检查（首次会打开浏览器授权）→ 创建 D1 数据库 → 写入 `wrangler.toml` → 初始化表结构 → 部署。**重复运行安全**，已创建的资源自动复用。
+脚本自动完成：登录检查（首次打开浏览器授权）→ 部署（D1 自动创建/复用）→ 初始化表结构。**重复运行安全**。
 
 ### 方式三：Deploy Button（一次性部署，仅适合尝鲜）
 
