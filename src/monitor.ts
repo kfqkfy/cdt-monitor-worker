@@ -3,7 +3,7 @@
  */
 import type { Account } from './aliyun';
 import { AliyunClient } from './aliyun';
-import { Store, shanghaiTimeStr, shanghaiHourMinute, fmtTime } from './store';
+import { Store, shanghaiTimeStr, shanghaiHourMinute, shanghaiMonth, shanghaiHM, shanghaiDate, fmtTime } from './store';
 import { Notifier } from './notify';
 
 const REGION_NAMES: Record<string, string> = {
@@ -251,7 +251,7 @@ export class Monitor {
     const billingEnabled = settings['enable_billing'] === '1';
     const currentTime = Math.floor(Date.now() / 1000);
     const accounts = await this.store.getAccounts();
-    const billingCycle = new Date().toISOString().slice(0, 7);
+    const billingCycle = shanghaiMonth();
 
     const data = [];
     for (const account of accounts) {
@@ -328,7 +328,7 @@ export class Monitor {
     const billingEnabled = settings['enable_billing'] === '1';
     if (!billingEnabled) return true;
 
-    const billingCycle = new Date().toISOString().slice(0, 7);
+    const billingCycle = shanghaiMonth();
     let billingError: string | null = null;
 
     const balanceCache = await this.store.getBillingCache(id, 'balance', '', 21600);
@@ -393,14 +393,14 @@ export class Monitor {
 
     const rawHourly = await this.store.getHourlyStats(id);
     const chartHourly = rawHourly.map((r) => ({
-      time: new Date(r.recorded_at * 1000).toISOString().slice(11, 16),
+      time: shanghaiHM(r.recorded_at),
       full_time: fmtTime(r.recorded_at),
       value: Math.round(r.traffic * 1000) / 1000,
     }));
 
     const rawDaily = await this.store.getDailyStats(id);
     const chartDaily = rawDaily.map((r) => ({
-      date: new Date(r.recorded_at * 1000).toISOString().slice(0, 10),
+      date: shanghaiDate(r.recorded_at),
       value: Math.round(r.traffic * 1000) / 1000,
     }));
 

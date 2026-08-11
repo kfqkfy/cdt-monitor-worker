@@ -277,8 +277,7 @@ export class Store {
   }
 
   async addDailyStat(accountId: number, traffic: number): Promise<void> {
-    const d = new Date();
-    const dayTs = Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 1000);
+    const dayTs = shanghaiDayStart(now());
     await this.db
       .prepare('INSERT OR REPLACE INTO traffic_daily (account_id, traffic, recorded_at) VALUES (?, ?, ?)')
       .bind(accountId, traffic, dayTs)
@@ -335,10 +334,71 @@ export class Store {
   }
 }
 
+/** 东八区 (Asia/Shanghai) 格式化时间戳 → YYYY-MM-DD HH:mm:ss */
 export function fmtTime(ts: number): string {
   const d = new Date(ts * 1000);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || '00';
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`;
+}
+
+/** 东八区 (Asia/Shanghai) 当前日期 YYYY-MM（阿里云账单周期按中国时区） */
+export function shanghaiMonth(): string {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date());
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || '0';
+  const pad = (s: string) => String(Number(s)).padStart(2, '0');
+  return `${get('year')}-${pad(get('month'))}`;
+}
+
+/** 东八区 (Asia/Shanghai) 指定时间戳 → HH:mm（图表横轴） */
+export function shanghaiHM(ts: number): string {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(ts * 1000));
+  const h = parts.find((p) => p.type === 'hour')?.value || '00';
+  const m = parts.find((p) => p.type === 'minute')?.value || '00';
+  return `${h}:${m}`;
+}
+
+/** 东八区 (Asia/Shanghai) 指定时间戳 → YYYY-MM-DD（图表 30 天横轴） */
+export function shanghaiDate(ts: number): string {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(ts * 1000));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || '00';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/** 东八区 (Asia/Shanghai) 当天 0 点时间戳（日统计粒度） */
+export function shanghaiDayStart(ts: number): number {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(ts * 1000));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || '0';
+  // 用 Date.UTC 构造东八区当天 0 点，再减去 8 小时得到 UTC 时间戳
+  return Math.floor(Date.UTC(Number(get('year')), Number(get('month')) - 1, Number(get('day'))) / 1000) - 8 * 3600;
 }
 
 /** Asia/Shanghai 时区当前时间字符串 HH:mm */

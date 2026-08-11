@@ -4,10 +4,13 @@
  * Telegram / Webhook: fetch 实现
  */
 
+import { fmtTime } from './store';
+
 export type NotifyConfig = Record<string, string>;
 
-function nowStr(): string {
-  return new Date().toISOString().replace('T', ' ').slice(0, 19);
+/** 东八区当前时间（通知正文时间戳） */
+function nowText(): string {
+  return fmtTime(Math.floor(Date.now() / 1000));
 }
 
 // ==================== SMTP ====================
@@ -229,7 +232,7 @@ export async function sendWebhook(
     if (method === 'GET') {
       let finalUrl = urlReplaced;
       if (!bodyTemplate && !finalUrl.includes('?')) {
-        const payload = new URLSearchParams({ title, text, time: nowStr() });
+        const payload = new URLSearchParams({ title, text, time: nowText() });
         finalUrl += '?' + payload.toString();
       }
       const resp = await fetch(finalUrl);
@@ -255,7 +258,7 @@ export async function sendWebhook(
         } catch {}
       }
     } else {
-      const payload = { title, text, time: nowStr() };
+      const payload = { title, text, time: nowText() };
       if (requestType === 'JSON') {
         finalBody = JSON.stringify(payload);
         customHeaders.push('Content-Type: application/json');
@@ -370,12 +373,12 @@ export class Notifier {
     const details = [
       { label: '账号 ID', value: maskedKey },
       { label: '执行动作', value: actionType, highlight: true },
-      { label: '执行时间', value: nowStr() },
+      { label: '执行时间', value: nowText() },
       { label: '当前流量', value: `${traffic} GB` },
       { label: '设定阈值', value: `${threshold}%` },
       { label: '详情说明', value: description || '根据预设时间表自动执行。' },
     ];
-    const textMsg = `【CDT Monitor】${title}\n账号 ID: ${maskedKey}\n执行动作: ${actionType}\n当前流量: ${traffic} GB\n设定阈值: ${threshold}%\n执行时间: ${nowStr()}\n详情说明: ${description || '根据预设时间表自动执行。'}`;
+    const textMsg = `【CDT Monitor】${title}\n账号 ID: ${maskedKey}\n执行动作: ${actionType}\n当前流量: ${traffic} GB\n设定阈值: ${threshold}%\n执行时间: ${nowText()}\n详情说明: ${description || '根据预设时间表自动执行。'}`;
     return this.dispatch(title, `您的实例已执行${actionType}操作`, details, 'info', textMsg, account.access_key_id);
   }
 
@@ -395,7 +398,7 @@ export class Notifier {
   async sendTestEmail(to: string): Promise<true | string> {
     const details = [
       { label: '测试结果', value: '成功 (Success)' },
-      { label: '发送时间', value: nowStr() },
+      { label: '发送时间', value: nowText() },
       { label: '服务器', value: 'Cloudflare Workers' },
     ];
     const html = renderEmailTemplate('测试邮件', 'SMTP 配置验证成功', details, 'success');
@@ -403,12 +406,12 @@ export class Notifier {
   }
 
   async sendTestTelegram(data: any): Promise<true | string> {
-    const textMsg = `【CDT Monitor】测试推送\n这是一条来自 Telegram 的测试消息。\n发送时间: ${nowStr()}`;
+    const textMsg = `【CDT Monitor】测试推送\n这是一条来自 Telegram 的测试消息。\n发送时间: ${nowText()}`;
     return sendTelegram(textMsg, this.cfg, data);
   }
 
   async sendTestWebhook(data: any): Promise<true | string> {
-    const textMsg = `【CDT Monitor】测试推送\n这是一条来自 Webhook 的测试消息。\n发送时间: ${nowStr()}`;
+    const textMsg = `【CDT Monitor】测试推送\n这是一条来自 Webhook 的测试消息。\n发送时间: ${nowText()}`;
     const summary = '这是一条来自 Webhook 的测试消息。';
     const threshold = this.cfg['traffic_threshold'] ?? 95;
     const details = [

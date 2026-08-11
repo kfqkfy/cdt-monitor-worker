@@ -131,9 +131,17 @@ export class AliyunClient {
         throw new Error(`Aliyun API 非 JSON 响应 (${resp.status}): ${text.slice(0, 200)}`);
       }
 
-      if (!resp.ok || json.Code) {
+      // BSS 等 API 成功响应也带 Code 字段（如 Code:"Success", Message:"Successful!"），
+      // 只有 Code 存在且不是 Success/200 才视为错误
+      const code = json.Code;
+      const okCode =
+        code === undefined ||
+        code === null ||
+        String(code).toUpperCase() === 'SUCCESS' ||
+        String(code) === '200';
+      if (!resp.ok || !okCode) {
         const err: any = new Error(json.Message || `HTTP ${resp.status}`);
-        err.Code = json.Code;
+        err.Code = code;
         err.statusCode = resp.status;
         throw err;
       }
