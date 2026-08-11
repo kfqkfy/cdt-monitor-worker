@@ -69,6 +69,8 @@ class Auth {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const store = new Store(env.DB);
+    // 首次运行自动建表（幂等，isolate 级缓存）
+    await store.ensureSchema().catch(() => {});
     const monitor = new Monitor(store);
     const url = new URL(request.url);
     const action = url.searchParams.get('action') || '';
@@ -229,6 +231,7 @@ export default {
 
 async function runMonitor(env: Env): Promise<void> {
   const store = new Store(env.DB);
+  await store.ensureSchema().catch(() => {});
   const monitor = new Monitor(store);
   try {
     const output = await monitor.monitor();
