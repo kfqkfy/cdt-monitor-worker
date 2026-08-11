@@ -85,9 +85,13 @@ export default {
     try {
       // ---- 公开接口 ----
       if (action === 'check_init') {
-        const settings = await store.getAllSettings();
-        const initialized = store.isInitialized(settings);
-        return json({ initialized });
+        try {
+          const settings = await store.getAllSettings();
+          const initialized = store.isInitialized(settings);
+          return json({ initialized });
+        } catch (e: any) {
+          return json({ error: '数据库连接失败: ' + (e?.message || e) + ' (请确认 D1 数据库已创建且 wrangler.toml 的 database_id 已正确填写)' }, 500);
+        }
       }
 
       if (action === 'setup') {
@@ -212,7 +216,8 @@ export default {
           return json({ error: 'Not Found', message: `Unknown action: ${action}` }, 404);
       }
     } catch (e: any) {
-      return json({ error: 'Internal Serverless Error', message: e?.message || String(e) }, 500);
+      const msg = e?.message || String(e);
+      return json({ error: `Internal Serverless Error: ${msg}` }, 500);
     }
   },
 

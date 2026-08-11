@@ -346,7 +346,7 @@
                         <p class="text-sm text-red-700 break-words font-mono bg-red-100/50 p-2 rounded-lg">{{
                             criticalError }}</p>
                     </div>
-                    <p class="mt-4 text-xs text-gray-500">请检查服务器目录权限，确保 Web 用户对当前目录有写入权限。</p>
+                    <p class="mt-4 text-xs text-gray-500">请根据下方错误信息排查：最常见原因是 D1 数据库未创建或未正确绑定（检查 wrangler.toml 的 database_id），重新部署后刷新页面。</p>
                     <div class="mt-6">
                         <button @click="location.reload()"
                             class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:text-sm">重试</button>
