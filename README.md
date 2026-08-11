@@ -29,50 +29,39 @@
 
 ## 部署
 
-### 前置条件
+### 🚀 方式一：Deploy Button（纯网页，零本地环境）
 
-- Node.js 18+
-- Cloudflare 账号（[注册](https://dash.cloudflare.com/signup)）
-- 本机已登录 wrangler（`npx wrangler login`）
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/kfqkfy/cdt-monitor-worker)
 
-### 1. 获取代码
+点击上方按钮 → 登录/授权 Cloudflare → 按引导创建 D1 数据库并确认 → 自动部署完成。
+全程浏览器操作，**不需要安装 Node.js / wrangler / 任何本地工具**。
+
+### 🚀 方式二：一键脚本（推荐，自动创建 D1 + 建表 + 部署）
+
+只需 Node.js 18+，一条命令：
+
+```bash
+git clone git@github.com:kfqkfy/cdt-monitor-worker.git
+cd cdt-monitor-worker
+./deploy.sh
+```
+
+脚本自动完成：登录检查（首次会打开浏览器授权）→ 创建 D1 数据库 → 写入 `wrangler.toml` → 初始化表结构 → 部署。**重复运行安全**，已创建的资源自动复用。
+
+### 方式三：手动部署
 
 ```bash
 git clone git@github.com:kfqkfy/cdt-monitor-worker.git
 cd cdt-monitor-worker
 npm install
-```
-
-### 2. 创建 D1 数据库
-
-```bash
-npx wrangler d1 create cdt_monitor
-```
-
-把输出的 `database_id` 填入 `wrangler.toml`：
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "cdt_monitor"
-database_id = "你的-d1-database-id"   # ← 粘贴到这里
-```
-
-### 3. 初始化表结构
-
-```bash
-npx wrangler d1 execute cdt_monitor --file=./schema.sql
-```
-
-### 4. 部署
-
-```bash
+npx wrangler d1 create cdt_monitor        # 把输出的 database_id 填入 wrangler.toml
+npx wrangler d1 execute cdt_monitor --remote --file=./schema.sql
 npx wrangler deploy
 ```
 
 部署成功后你会看到 `https://cdt-monitor.你的子域.workers.dev`。
 
-### 5. 初始化系统
+### 初始化系统
 
 浏览器打开上面的 URL → 首次访问进入初始化向导 → 设置管理员密码 → 添加阿里云账号（AccessKey/Secret、区域、实例 ID、流量上限、定时计划）→ 保存。
 
