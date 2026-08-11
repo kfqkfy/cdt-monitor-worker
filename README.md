@@ -29,14 +29,32 @@
 
 ## 部署
 
-### 🚀 方式一：Deploy Button（纯网页，零本地环境）
+### 🚀 方式一：Workers Builds（Git 集成，push 即自动部署）
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/kfqkfy/cdt-monitor-worker)
+连接你**已有的** GitHub 仓库，代码 push 后 Cloudflare 自动重新部署。
 
-点击上方按钮 → 登录/授权 Cloudflare → 按引导创建 D1 数据库并确认 → 自动部署完成。
-全程浏览器操作，**不需要安装 Node.js / wrangler / 任何本地工具**。
+1. **创建 D1 数据库**（一次）
+   - Dashboard → Workers & Pages → **D1** → **Create database** → 名字 `cdt_monitor`
+2. **连接仓库**
+   - Workers & Pages → **Create** → **Workers** → **Deploy with Git**
+   - 授权 GitHub → 选择 `kfqkfy/cdt-monitor-worker` → 分支 `main`
+   - 构建/部署命令保持默认（`npm run deploy` 与 `npx wrangler deploy` 等价）
+3. **⚠️ 关键：绑定 D1（必须做，否则部署报 10021）**
+   - 项目 → **Settings** → **Bindings** → **Add binding**
+   - Type: `D1 database`，Variable name: **`DB`**（必须精确），Database: `cdt_monitor`
+4. **添加 Cron 触发器**
+   - **Settings** → **Triggers** → **Cron Triggers** → `* * * * *`
+5. **初始化表结构**
+   - 项目 → **Console** 运行（或本地执行）：
+   ```bash
+   npx wrangler d1 execute cdt_monitor --remote --file=./schema.sql
+   ```
+6. **完成** — 以后每次 `git push` 到 main 自动重新部署
 
-### 🚀 方式二：一键脚本（推荐，自动创建 D1 + 建表 + 部署）
+> ⚠️ 常见错误 `binding DB of type d1 must have a valid database_id [code: 10021]`：
+> 仓库 `wrangler.toml` 中的 `database_id` 是占位符，必须按第 3 步在 Dashboard 添加 D1 Binding 覆盖它，然后 Retry deployment。
+
+### 🚀 方式二：一键脚本（自动创建 D1 + 建表 + 部署）
 
 只需 Node.js 18+，一条命令：
 
@@ -48,7 +66,11 @@ cd cdt-monitor-worker
 
 脚本自动完成：登录检查（首次会打开浏览器授权）→ 创建 D1 数据库 → 写入 `wrangler.toml` → 初始化表结构 → 部署。**重复运行安全**，已创建的资源自动复用。
 
-### 方式三：手动部署
+### 方式三：Deploy Button（一次性部署，仅适合尝鲜）
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/kfqkfy/cdt-monitor-worker)
+
+点击按钮 → 授权 → 按引导创建资源并部署。⚠️ 每次部署独立，**代码更新不会自动重新部署**，且需要手动处理 D1 绑定，长期使用请用方式一或方式二。
 
 ```bash
 git clone git@github.com:kfqkfy/cdt-monitor-worker.git
