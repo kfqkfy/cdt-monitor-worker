@@ -1,0 +1,17 @@
+{
+  "name": "cdt-monitor-worker",
+  "version": "1.0.0",
+  "description": "CDT-Monitor 阿里云 CDT 流量监控 Cloudflare Workers 版",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute cdt_monitor --local --file=./schema.sql",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260804.1",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.120.1"
+  }
+}

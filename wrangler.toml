@@ -1,0 +1,21 @@
+name = "cdt-monitor"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 静态面板 (原版 template.html + vue + echarts)
+# run_worker_first: Worker 先处理所有请求（含 ?action= 路由），静态文件由 Worker 手动 fetch
+[assets]
+directory = "./static"
+binding = "ASSETS"
+run_worker_first = true
+
+# 部署前: npx wrangler d1 create cdt_monitor 然后把 database_id 填进来
+[[d1_databases]]
+binding = "DB"
+database_name = "cdt_monitor"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# 每分钟触发监控（对应原版 cron * * * * *）
+[triggers]
+crons = ["* * * * *"]
