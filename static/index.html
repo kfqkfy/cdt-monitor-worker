@@ -1270,7 +1270,7 @@
                     if (echartsLoaded) return Promise.resolve();
                     return new Promise((resolve, reject) => {
                         const s = document.createElement('script');
-                        s.src = 'static/echarts.min.js';
+                        s.src = 'echarts.min.js';
                         s.onload = () => { echartsLoaded = true; resolve(); };
                         s.onerror = reject;
                         document.head.appendChild(s);
@@ -1292,11 +1292,13 @@
                         ]);
                         const json = await res.json();
                         currentChartData = json.data || {};
-
                         setTimeout(() => {
-                            initChart();
-                            renderChart();
-                            chartLoading.value = false;
+                            try {
+                                initChart();
+                                renderChart();
+                            } finally {
+                                chartLoading.value = false;
+                            }
                         }, 100);
 
                     } catch (e) {
