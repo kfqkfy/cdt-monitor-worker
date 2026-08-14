@@ -246,14 +246,16 @@ export class Store {
     await this.db.prepare(`DELETE FROM logs WHERE type IN (${ph})`).bind(...types).run();
   }
 
-  /** 分级清理日志：普通日志 30 天，心跳日志 3 天 */
+  /** 分级清理日志：普通日志 30 天，心跳日志 3 天
+   *  注意: 条件必须用 type IN (...) 等值形式（不能用 type != ...），
+   *  否则 SQLite 无法走 (type, created_at) 索引，全表扫描导致 D1 读取行数爆炸 */
   async pruneLogs(): Promise<void> {
     await this.db
       .prepare("DELETE FROM logs WHERE type = 'heartbeat' AND created_at < ?")
       .bind(now() - 3 * 86400)
       .run();
     await this.db
-      .prepare("DELETE FROM logs WHERE type != 'heartbeat' AND created_at < ?")
+      .prepare("DELETE FROM logs WHERE type IN ('info','warning','error') AND created_at < ?")
       .bind(now() - 30 * 86400)
       .run();
   }
