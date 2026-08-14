@@ -1534,7 +1534,7 @@
                     fetchLogs(); // 立即执行一次
                     logAutoRefresh.value = true;
                     if (logInterval) clearInterval(logInterval);
-                    logInterval = setInterval(fetchLogs, 3000); // 3秒刷新一次
+                    logInterval = setInterval(fetchLogs, 30000); // 30秒刷新一次（原3秒，D1 按读取行数计费，降频可省大量配额）
                 };
 
                 const stopLogPolling = () => {

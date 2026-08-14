@@ -233,6 +233,14 @@ export class Store {
     return results.map((r) => ({ ...r, time_str: fmtTime(Number(r.created_at)) }));
   }
 
+  /** 最近一条心跳日志时间（用于心跳降频） */
+  async getLastHeartbeatTime(): Promise<number> {
+    const row = await this.db
+      .prepare("SELECT MAX(created_at) AS t FROM logs WHERE type = 'heartbeat'")
+      .first<any>();
+    return Number(row?.t || 0);
+  }
+
   async clearLogsByTypes(types: string[]): Promise<void> {
     const ph = types.map(() => '?').join(',');
     await this.db.prepare(`DELETE FROM logs WHERE type IN (${ph})`).bind(...types).run();
