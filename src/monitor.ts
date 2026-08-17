@@ -377,8 +377,15 @@ export class Monitor {
     const settings = await this.store.getAllSettings();
     const keepAlive = settings['keep_alive'] === '1';
     if (keepAlive && action.toLowerCase() === 'stop') {
-      await this.store.addLog('warning', `拒绝手动关机请求 [${account.access_key_id}]: 实例保活功能已开启`);
-      return { success: false, message: '操作被拒绝：当前开启了"实例保活"模式，不允许手动关机。' };
+      // 保活只会在"开机时段内"拉起实例。若配置了定时开关机且当前不在开机时段，
+      // 手动关机不会被保活撤销，应放行
+      const inScheduleWindow =
+        account.schedule_enabled == 1 && isTimeInRange(shanghaiTimeStr(), account.start_time, account.stop_time);
+      const keepAliveActive = account.schedule_enabled == 0 || inScheduleWindow;
+      if (keepAliveActive) {
+        await this.store.addLog('warning', `拒绝手动关机请求 [${account.access_key_id}]: 实例保活功能已开启`);
+        return { success: false, message: '操作被拒绝：当前开启了"实例保活"模式，不允许手动关机。' };
+      }
     }
 
     const shutdownMode = settings['shutdown_mode'] || 'KeepCharging';
